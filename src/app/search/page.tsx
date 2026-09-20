@@ -54,7 +54,6 @@ export default function NaturalLanguageSearchPage() {
       {/* Header */}
       <div className="space-y-2 border-b border-neutral-300/80 pb-5">
         <div className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-mono font-semibold text-neutral-800 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[#FF3B30] inline-block animate-ping" />
           <span className="tracking-wider uppercase">Evidence-Backed Retrieval (PRD §19)</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-[#0F0F0F]">

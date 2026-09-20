@@ -104,261 +104,304 @@ export function DashboardView({ onBackToLanding }: DashboardViewProps) {
     }
   };
 
+  // Cleanly remove any "Built with Spline" watermark badges inserted into DOM
+  useEffect(() => {
+    const purgeWatermarks = () => {
+      const targets = document.querySelectorAll(
+        'a[href*="spline.design"], a[href*="spline"], #spline-watermark, [class*="watermark"], [class*="spline-watermark"]'
+      );
+      targets.forEach(el => {
+        (el as HTMLElement).style.setProperty('display', 'none', 'important');
+        el.remove();
+      });
+    };
+
+    purgeWatermarks();
+    const observer = new MutationObserver(purgeWatermarks);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="space-y-8">
-      {/* Dashboard Hero Section: Spline 3D Character on the Left, Akira Heading & Actions on the Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center pt-4 pb-4 sm:pt-6 sm:pb-6">
+    <div className="w-full">
+      {/* 2-Column Master Layout: Left Column = STICKY 3D Model, Right Column = All Dashboard Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
         
-        {/* Left Side: 3D Spline Interactive Model */}
-        <div className="lg:col-span-5 w-full h-[460px] sm:h-[540px] lg:h-[580px] relative overflow-hidden flex items-center justify-center">
-          <Spline
-            scene="https://prod.spline.design/p80gWRiUGIf-AO8E/scene.splinecode"
-            className="w-full h-full cursor-grab active:cursor-grabbing"
-          />
-          {/* Cover the "Built with Spline" watermark badge — gradient fade matching page bg */}
-          <div
-            aria-hidden="true"
-            style={{
-              pointerEvents: 'none',
-              height: '130px',
-              background: 'linear-gradient(to top, #f3f2f2 60%, transparent 100%)',
-            }}
-            className="absolute bottom-0 left-0 right-0"
-          />
-        </div>
-
-        {/* Right Side: Akira Heading, Subparagraph & Action Buttons */}
-        <div className="lg:col-span-7 space-y-5 text-left">
-          <h1 className="font-akira text-2xl sm:text-3xl md:text-[2.1rem] lg:text-[2.25rem] text-[#0F0F0F] font-bold uppercase tracking-wider leading-snug sm:leading-tight">
-            EVIDENCE BACKED CANDIDATE<br className="hidden sm:inline" /> SCREENING &amp; INTERVIEW INTELLIGENCE
-          </h1>
-
-          <p className="text-xs sm:text-sm text-neutral-600 max-w-xl leading-relaxed font-medium tracking-wide">
-            Eliminate repetitive resume triage with precision requirement-to-evidence mapping, candidate-specific interview questions, and explainable audit trails.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-4 pt-1">
-            <button
-              onClick={() => setShowRoleModal(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-none sm:rounded-md bg-black hover:bg-[#FF3B30] text-white px-7 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer border-2 border-black"
+        {/* Left Side: Sticky 3D Spline Interactive Model */}
+        <div className="lg:col-span-5 w-full lg:sticky lg:top-20 self-start z-10">
+          <div className="w-full h-[440px] sm:h-[500px] lg:h-[calc(100vh-6.5rem)] max-h-[600px] relative flex items-center justify-center overflow-visible">
+            
+            {/* Realistic Floating Ground Shadow positioned directly under the floating robot */}
+            <div
+              aria-hidden="true"
+              className="absolute bottom-[118px] sm:bottom-[128px] lg:bottom-[132px] left-1/2 pointer-events-none -translate-x-1/2 translate-x-4 sm:translate-x-8 flex items-center justify-center"
             >
-              <Plus className="h-4 w-4" />
-              <span>Create New Role</span>
-            </button>
+              {/* Soft Ambient Penumbra */}
+              <div
+                className="w-52 sm:w-60 h-6 sm:h-7 rounded-[50%]"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(15, 15, 15, 0.18) 0%, rgba(15, 15, 15, 0.05) 50%, transparent 75%)',
+                  filter: 'blur(8px)',
+                }}
+              />
+              {/* Focused Core Occlusion Shadow */}
+              <div
+                className="absolute w-32 sm:w-38 h-3 sm:h-3.5 rounded-[50%]"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(15, 15, 15, 0.40) 0%, rgba(15, 15, 15, 0.15) 45%, transparent 75%)',
+                  filter: 'blur(4px)',
+                }}
+              />
+            </div>
 
-            <Link
-              href="/search"
-              className="inline-flex items-center justify-center gap-2 rounded-none sm:rounded-md border-2 border-black bg-white hover:bg-neutral-100 text-black px-7 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-sm"
+            {/* 3D Spline Character: pushed rightward and bottom watermark badge completely clipped out */}
+            <div 
+              className="w-full h-full transform translate-x-4 sm:translate-x-8 flex items-center justify-center overflow-visible"
+              style={{ clipPath: 'inset(0 0 110px 0)' }}
             >
-              <Search className="h-4 w-4 text-black" />
-              <span>Natural Language Search</span>
-            </Link>
+              <Spline
+                scene="https://prod.spline.design/p80gWRiUGIf-AO8E/scene.splinecode"
+                className="w-full h-full cursor-grab active:cursor-grabbing"
+              />
+            </div>
           </div>
         </div>
 
-      </div>
+        {/* Right Side: Akira Heading, Actions, KPI Stats, Active Roles, Candidates & Audit */}
+        <div className="lg:col-span-7 space-y-8 text-left">
+          
+          {/* Hero Header & Action Buttons */}
+          <div className="space-y-5 pt-2 sm:pt-4">
+            <h1 className="font-akira text-2xl sm:text-3xl md:text-[2.1rem] lg:text-[2.25rem] text-[#0F0F0F] font-bold uppercase tracking-wider leading-snug sm:leading-tight">
+              EVIDENCE BACKED CANDIDATE<br className="hidden sm:inline" /> SCREENING &amp; INTERVIEW INTELLIGENCE
+            </h1>
 
-      {/* KPI Stats Grid (Stark Clean White Cards matching Landing Theme) */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Active Roles</span>
-            <div className="rounded-lg bg-neutral-100 p-2 text-[#0F0F0F] border border-neutral-200">
-              <Briefcase className="h-4 w-4" />
-            </div>
-          </div>
-          <p className="mt-3 text-3xl font-display font-bold text-[#0F0F0F]">{roles.length}</p>
-          <p className="mt-1 text-xs text-neutral-500">Standardized JD requirement models</p>
-        </div>
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-xl leading-relaxed font-medium tracking-wide">
+              Eliminate repetitive resume triage with precision requirement-to-evidence mapping, candidate-specific interview questions, and explainable audit trails.
+            </p>
 
-        <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Candidates Screened</span>
-            <div className="rounded-lg bg-neutral-100 p-2 text-[#0F0F0F] border border-neutral-200">
-              <Users className="h-4 w-4" />
-            </div>
-          </div>
-          <p className="mt-3 text-3xl font-display font-bold text-[#0F0F0F]">{candidates.length}</p>
-          <p className="mt-1 text-xs text-neutral-500">Evidence mapped & verified</p>
-        </div>
-
-        <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Interview Sessions</span>
-            <div className="rounded-lg bg-neutral-100 p-2 text-[#0F0F0F] border border-neutral-200">
-              <Cpu className="h-4 w-4" />
-            </div>
-          </div>
-          <p className="mt-3 text-3xl font-display font-bold text-[#0F0F0F]">
-            {candidates.filter(c => c.status === 'EVALUATED' || c.status === 'INTERVIEW_SCHEDULED').length}
-          </p>
-          <p className="mt-1 text-xs text-neutral-500">AI-tailored questions & follow-ups</p>
-        </div>
-
-        <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Decision Authority</span>
-            <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 border border-emerald-200">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
-          </div>
-          <p className="mt-3 text-3xl font-display font-bold text-emerald-700">100% Human</p>
-          <p className="mt-1 text-xs text-neutral-500">Zero autonomous rejections</p>
-        </div>
-      </div>
-
-      {/* Main Grid: Roles & Candidate Highlights */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left 2 Cols: Active Roles */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-[#0F0F0F]" />
-              <h2 className="text-base font-display font-bold text-[#0F0F0F] tracking-wide uppercase">ACTIVE HIRING ROLES</h2>
-            </div>
-            <Link 
-              href="/roles" 
-              className="text-xs font-semibold text-neutral-700 hover:text-black flex items-center gap-1 group"
-            >
-              <span>View All Roles</span>
-              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="space-y-3">
-            {roles.map(role => (
-              <div 
-                key={role.id}
-                className="group rounded-xl border border-neutral-300/80 bg-white p-5 hover:border-black transition-all shadow-xs"
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              <button
+                onClick={() => setShowRoleModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-none sm:rounded-md bg-black hover:bg-[#FF3B30] text-white px-7 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer border-2 border-black"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2.5">
-                      <h3 className="text-base font-bold text-[#0F0F0F] group-hover:text-black transition-colors">
-                        {role.title}
-                      </h3>
-                      <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-mono font-semibold text-neutral-800 border border-neutral-300">
-                        {role.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-neutral-500">
-                      <span>{role.department}</span>
-                      <span>•</span>
-                      <span>{role.location}</span>
-                      <span>•</span>
-                      <span className="text-neutral-800 font-mono font-medium">
-                        {role.requirements?.length || 0} Requirements
-                      </span>
-                    </div>
-                  </div>
+                <Plus className="h-4 w-4" />
+                <span>Create New Role</span>
+              </button>
 
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-mono font-semibold text-neutral-700 border border-neutral-300">
-                      {role.candidateCount || 0} Candidates
-                    </span>
-                    <Link
-                      href={`/roles/${role.id}`}
-                      className="rounded-lg bg-[#0F0F0F] px-4 py-2 text-xs font-display font-bold text-white hover:bg-[#FF3B30] transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    >
-                      <span>Role Workspace</span>
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </div>
+              <Link
+                href="/search"
+                className="inline-flex items-center justify-center gap-2 rounded-none sm:rounded-md border-2 border-black bg-white hover:bg-neutral-100 text-black px-7 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-sm"
+              >
+                <Search className="h-4 w-4 text-black" />
+                <span>Natural Language Search</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* KPI Stats Grid (2x2 on right side) */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Active Roles</span>
+                <div className="rounded-lg bg-neutral-100 p-2 text-[#0F0F0F] border border-neutral-200">
+                  <Briefcase className="h-4 w-4" />
                 </div>
               </div>
-            ))}
+              <p className="mt-3 text-3xl font-display font-bold text-[#0F0F0F]">{roles.length}</p>
+              <p className="mt-1 text-xs text-neutral-500">Standardized JD requirement models</p>
+            </div>
+
+            <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Candidates Screened</span>
+                <div className="rounded-lg bg-neutral-100 p-2 text-[#0F0F0F] border border-neutral-200">
+                  <Users className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="mt-3 text-3xl font-display font-bold text-[#0F0F0F]">{candidates.length}</p>
+              <p className="mt-1 text-xs text-neutral-500">Evidence mapped & verified</p>
+            </div>
+
+            <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Interview Sessions</span>
+                <div className="rounded-lg bg-neutral-100 p-2 text-[#0F0F0F] border border-neutral-200">
+                  <Cpu className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="mt-3 text-3xl font-display font-bold text-[#0F0F0F]">
+                {candidates.filter(c => c.status === 'EVALUATED' || c.status === 'INTERVIEW_SCHEDULED').length}
+              </p>
+              <p className="mt-1 text-xs text-neutral-500">AI-tailored questions & follow-ups</p>
+            </div>
+
+            <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs hover:border-black transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">Decision Authority</span>
+                <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 border border-emerald-200">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="mt-3 text-3xl font-display font-bold text-emerald-700">100% Human</p>
+              <p className="mt-1 text-xs text-neutral-500">Zero autonomous rejections</p>
+            </div>
           </div>
 
-          {/* Quick Natural Language Search Banner */}
-          <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-neutral-100 text-[#0F0F0F] border border-neutral-200">
-                <Search className="h-4 w-4" />
+          {/* Active Roles Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-[#0F0F0F]" />
+                <h2 className="text-base font-display font-bold text-[#0F0F0F] tracking-wide uppercase">ACTIVE HIRING ROLES</h2>
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-[#0F0F0F]">Natural Language Candidate Search</h4>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  Semantic requirement matching across parsed resume snippets and portfolios.
-                </p>
-              </div>
-            </div>
-            <div className="mt-3.5">
               <Link 
-                href="/search" 
-                className="w-full text-left rounded-lg border border-neutral-300 bg-neutral-50 hover:bg-neutral-100 px-4 py-2.5 text-xs text-neutral-600 hover:text-black hover:border-black transition-all flex items-center justify-between shadow-2xs"
+                href="/roles" 
+                className="text-xs font-semibold text-neutral-700 hover:text-black flex items-center gap-1 group"
               >
-                <span>Try: &ldquo;Show candidates with distributed systems and Kafka scale&rdquo;</span>
-                <ArrowRight className="h-4 w-4 text-[#0F0F0F]" />
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Right 1 Col: Candidate Pipeline & Audit Activity */}
-        <div className="space-y-6">
-          {/* Candidates Box */}
-          <div className="rounded-xl border border-neutral-300/80 bg-white p-5 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-[#0F0F0F]" />
-                <h3 className="text-sm font-display font-bold text-[#0F0F0F] uppercase">RECENT CANDIDATES</h3>
-              </div>
-              <Link href="/candidates" className="text-xs font-semibold text-neutral-600 hover:text-black hover:underline">
-                View All
+                <span>View All Roles</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
 
-            <div className="space-y-2.5">
-              {candidates.slice(0, 4).map(cand => (
-                <Link
-                  key={cand.id}
-                  href={`/candidates/${cand.id}`}
-                  className="block rounded-lg border border-neutral-200 bg-neutral-50/60 p-3 hover:border-black hover:bg-white transition-all shadow-2xs"
+            <div className="space-y-3">
+              {roles.map(role => (
+                <div 
+                  key={role.id}
+                  className="group rounded-xl border border-neutral-300/80 bg-white p-5 hover:border-black transition-all shadow-xs"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-[#0F0F0F]">{cand.name}</span>
-                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border border-neutral-300 bg-white text-neutral-800">
-                      {cand.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-1 truncate">{cand.currentTitle}</p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {cand.skills.slice(0, 3).map((s, idx) => (
-                      <span key={idx} className="rounded bg-neutral-200/70 px-1.5 py-0.5 text-[10px] text-neutral-700 font-mono">
-                        {s}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <h3 className="text-base font-bold text-[#0F0F0F] group-hover:text-black transition-colors">
+                          {role.title}
+                        </h3>
+                        <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-mono font-semibold text-neutral-800 border border-neutral-300">
+                          {role.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-neutral-500">
+                        <span>{role.department}</span>
+                        <span>•</span>
+                        <span>{role.location}</span>
+                        <span>•</span>
+                        <span className="text-neutral-800 font-mono font-medium">
+                          {role.requirements?.length || 0} Requirements
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-mono font-semibold text-neutral-700 border border-neutral-300">
+                        {role.candidateCount || 0} Candidates
                       </span>
-                    ))}
+                      <Link
+                        href={`/roles/${role.id}`}
+                        className="rounded-lg bg-[#0F0F0F] px-4 py-2 text-xs font-display font-bold text-white hover:bg-[#FF3B30] transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                      >
+                        <span>Role Workspace</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Audit Feed */}
-          <div className="rounded-xl border border-neutral-300/80 bg-white p-5 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-[#0F0F0F]" />
-                <h3 className="text-sm font-display font-bold text-[#0F0F0F] uppercase">AUDIT TRAIL</h3>
-              </div>
-              <Link href="/audit" className="text-xs font-semibold text-neutral-600 hover:text-black hover:underline">
-                Full Log
-              </Link>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              {auditEvents.map(evt => (
-                <div key={evt.id} className="border-l-2 border-black pl-3 py-0.5 space-y-0.5">
-                  <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                    <span className="font-bold text-[#0F0F0F]">{evt.action.replace('_', ' ')}</span>
-                    <span className="font-mono">{new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <p className="text-neutral-600 line-clamp-2">{evt.details}</p>
                 </div>
               ))}
             </div>
+
+            {/* Quick Natural Language Search Banner */}
+            <div className="rounded-xl border border-neutral-300/80 bg-white p-5 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-neutral-100 text-[#0F0F0F] border border-neutral-200">
+                  <Search className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[#0F0F0F]">Natural Language Candidate Search</h4>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Semantic requirement matching across parsed resume snippets and portfolios.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3.5">
+                <Link 
+                  href="/search" 
+                  className="w-full text-left rounded-lg border border-neutral-300 bg-neutral-50 hover:bg-neutral-100 px-4 py-2.5 text-xs text-neutral-600 hover:text-black hover:border-black transition-all flex items-center justify-between shadow-2xs"
+                >
+                  <span>Try: &ldquo;Show candidates with distributed systems and Kafka scale&rdquo;</span>
+                  <ArrowRight className="h-4 w-4 text-[#0F0F0F]" />
+                </Link>
+              </div>
+            </div>
           </div>
+
+          {/* Subgrid: Recent Candidates & Audit Feed */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Candidates Box */}
+            <div className="rounded-xl border border-neutral-300/80 bg-white p-5 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-[#0F0F0F]" />
+                  <h3 className="text-sm font-display font-bold text-[#0F0F0F] uppercase">RECENT CANDIDATES</h3>
+                </div>
+                <Link href="/candidates" className="text-xs font-semibold text-neutral-600 hover:text-black hover:underline">
+                  View All
+                </Link>
+              </div>
+
+              <div className="space-y-2.5">
+                {candidates.slice(0, 4).map(cand => (
+                  <Link
+                    key={cand.id}
+                    href={`/candidates/${cand.id}`}
+                    className="block rounded-lg border border-neutral-200 bg-neutral-50/60 p-3 hover:border-black hover:bg-white transition-all shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-[#0F0F0F]">{cand.name}</span>
+                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border border-neutral-300 bg-white text-neutral-800">
+                        {cand.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-1 truncate">{cand.currentTitle}</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {cand.skills.slice(0, 3).map((s, idx) => (
+                        <span key={idx} className="rounded bg-neutral-200/70 px-1.5 py-0.5 text-[10px] text-neutral-700 font-mono">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Audit Feed */}
+            <div className="rounded-xl border border-neutral-300/80 bg-white p-5 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-[#0F0F0F]" />
+                  <h3 className="text-sm font-display font-bold text-[#0F0F0F] uppercase">AUDIT TRAIL</h3>
+                </div>
+                <Link href="/audit" className="text-xs font-semibold text-neutral-600 hover:text-black hover:underline">
+                  Full Log
+                </Link>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                {auditEvents.map(evt => (
+                  <div key={evt.id} className="border-l-2 border-black pl-3 py-0.5 space-y-0.5">
+                    <div className="flex items-center justify-between text-[11px] text-neutral-500">
+                      <span className="font-bold text-[#0F0F0F]">{evt.action.replace('_', ' ')}</span>
+                      <span className="font-mono">{new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <p className="text-neutral-600 line-clamp-2">{evt.details}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
+
       </div>
 
       {/* Modal: Create Role & Parse JD */}

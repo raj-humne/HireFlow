@@ -6,6 +6,7 @@ import { Character3D, Character3DHandle } from '@/components/ui/Character3D';
 import { Navbar } from '@/components/layout/Navbar';
 import { DashboardView } from '@/components/DashboardView';
 import { scrollToTarget } from '@/components/layout/SmoothScroll';
+import gsap from 'gsap';
 import { 
   ArrowDown,
   RotateCcw, 
@@ -17,6 +18,14 @@ export default function LandingPage() {
   const characterRef = useRef<Character3DHandle | null>(null);
   const [showMethodology, setShowMethodology] = useState(false);
 
+  // GSAP animation refs
+  const logoRef       = useRef<HTMLDivElement>(null);
+  const navRef        = useRef<HTMLElement>(null);
+  const modelRef      = useRef<HTMLDivElement>(null);
+  const lettersRef    = useRef<HTMLHeadingElement>(null);
+  const ctaRef        = useRef<HTMLDivElement>(null);
+  const dashboardRef  = useRef<HTMLElement>(null);
+
   const scrollToDashboard = () => {
     scrollToTarget('#dashboard', { duration: 1.3 });
   };
@@ -24,6 +33,65 @@ export default function LandingPage() {
   const scrollToTop = () => {
     scrollToTarget(0, { duration: 1.2 });
   };
+
+  // ── GSAP Entry Animation ──────────────────────────────────────────────────
+  useEffect(() => {
+    // Set everything invisible before animating in
+    gsap.set([logoRef.current, navRef.current, modelRef.current, ctaRef.current], {
+      autoAlpha: 0,
+    });
+    if (lettersRef.current) {
+      gsap.set(lettersRef.current.querySelectorAll('span'), {
+        autoAlpha: 0,
+        y: 60,
+        rotateX: -90,
+        transformOrigin: 'center bottom',
+      });
+    }
+    gsap.set(modelRef.current, { y: -80, scale: 0.85 });
+    gsap.set(ctaRef.current,    { y: 40 });
+    gsap.set(logoRef.current,   { x: -30 });
+    gsap.set(navRef.current,    { y: -20 });
+
+    const tl = gsap.timeline({ delay: 0.1 });
+
+    // 1. Logo slides in from left
+    tl.to(logoRef.current, {
+      autoAlpha: 1, x: 0,
+      duration: 0.7, ease: 'power3.out',
+    });
+
+    // 2. Nav fades down simultaneously
+    tl.to(navRef.current, {
+      autoAlpha: 1, y: 0,
+      duration: 0.6, ease: 'power3.out',
+    }, '<0.1');
+
+    // 3. 3D model drops in with bounce
+    tl.to(modelRef.current, {
+      autoAlpha: 1, y: 0, scale: 1,
+      duration: 1.0, ease: 'back.out(1.5)',
+    }, '<0.2');
+
+    // 4. HIREFLOW letters flip in one by one
+    if (lettersRef.current) {
+      tl.to(lettersRef.current.querySelectorAll('span'), {
+        autoAlpha: 1, y: 0, rotateX: 0,
+        duration: 0.55,
+        ease: 'back.out(2)',
+        stagger: 0.07,
+      }, '<0.3');
+    }
+
+    // 5. CTAs slide up
+    tl.to(ctaRef.current, {
+      autoAlpha: 1, y: 0,
+      duration: 0.6, ease: 'power3.out',
+    }, '<0.4');
+
+    return () => { tl.kill(); };
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Handle initial page load, reload, and intentional navigation to dashboard
   useEffect(() => {
@@ -35,16 +103,19 @@ export default function LandingPage() {
 
     // 1. Check if user intentionally navigated to Dashboard (via Navbar or /dashboard redirect)
     let shouldGoToDashboard = false;
+    let isBackward = false;
     try {
       shouldGoToDashboard = 
         sessionStorage.getItem('navToDashboard') === 'true' ||
         window.location.search.includes('tab=dashboard') ||
         window.location.hash === '#dashboard';
+      isBackward = sessionStorage.getItem('slideDirection') === 'backward';
     } catch (e) {}
 
     if (shouldGoToDashboard) {
       try {
         sessionStorage.removeItem('navToDashboard');
+        sessionStorage.removeItem('slideDirection');
       } catch (e) {}
 
       // Clean query parameters and hash so future reloads won't have ?tab=dashboard or #dashboard
@@ -80,44 +151,41 @@ export default function LandingPage() {
 
 
 
-
   return (
-    <div className="min-h-screen w-full bg-[#f3f2f2] text-[#0F0F0F] select-none relative wireframe-grid">
+    <div className="w-full bg-[#f3f2f2] text-[#0F0F0F] select-none wireframe-grid">
       {/* 
         Persistent Fixed Brand Logo in Top-Left across all slides:
         Stays fixed in the top-left corner as the user scrolls through the landing hero and down to the dashboard.
       */}
-      <div className="fixed top-0 left-0 z-50 px-4 sm:px-8 py-4 sm:py-5 flex items-center pointer-events-auto">
+      <div ref={logoRef} className="fixed top-0 left-0 z-50 px-4 sm:px-8 py-4 sm:py-5 flex items-center pointer-events-auto">
         <button 
           type="button"
           onClick={scrollToTop}
-          className="flex items-center gap-3 tracking-wider font-display font-bold text-sm sm:text-base cursor-pointer hover:opacity-80 transition-all bg-transparent text-[#0F0F0F]"
+          className="flex items-center gap-2.5 tracking-wider font-display font-bold text-sm sm:text-base cursor-pointer hover:opacity-80 transition-all bg-transparent text-[#0F0F0F]"
           title="Scroll to 3D Landing Page"
         >
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FF3B30] inline-block animate-ping" />
           <span className="tracking-[0.2em] uppercase text-[#0F0F0F] font-bold">HIREFLOW</span>
-          <span className="hidden md:inline-block text-[10px] text-neutral-500 font-mono pl-2 border-l border-neutral-400">OS 3.4v</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* SLIDE 1: 3D Core Interactive Landing Page                                 */}
+      {/* SLIDE 1: 3D Core Interactive Landing Page — PINNED (sticky)               */}
       {/* ========================================================================= */}
-      <section className="h-screen w-full flex flex-col justify-between relative overflow-hidden shrink-0">
+      <section className="h-screen w-full flex flex-col justify-between relative overflow-hidden sticky top-0 z-[1]">
         {/* Top Header Navigation (Offset on left for persistent fixed logo) */}
         <header className="w-full pt-4 px-4 sm:pt-6 sm:px-8 z-30 flex items-center justify-between gap-4">
           {/* Spacer for fixed top-left logo */}
           <div className="w-36 sm:w-48 shrink-0" aria-hidden="true" />
 
           {/* Right Navigation Menu */}
-          <nav className="px-4 py-2 sm:px-7 sm:py-3 flex items-center space-x-4 sm:space-x-8 font-sans text-xs sm:text-sm font-medium tracking-wide bg-transparent">
+          <nav ref={navRef} className="px-4 py-2 sm:px-7 sm:py-3 flex items-center space-x-4 sm:space-x-8 font-sans text-xs sm:text-sm font-medium tracking-wide bg-transparent">
             <div className="hidden lg:flex items-center space-x-6 text-[#0F0F0F]">
-              <button 
-                onClick={scrollToDashboard}
+              <Link 
+                href="/dashboard"
                 className="hover:text-neutral-600 transition-colors duration-200 font-medium cursor-pointer"
               >
                 Dashboard
-              </button>
+              </Link>
               <button 
                 onClick={() => setShowMethodology(true)}
                 className="hover:text-neutral-600 transition-colors duration-200 font-medium cursor-pointer"
@@ -155,17 +223,21 @@ export default function LandingPage() {
         <main className="relative flex-1 w-full flex items-center justify-center min-h-0 overflow-visible py-1 sm:py-2" data-purpose="hero-3d-stage">
           <div className="relative w-full max-w-6xl h-full max-h-[64vh] flex items-center justify-center">
             {/* Interactive 3D Character Model */}
-            <Character3D 
-              ref={characterRef} 
-              className="w-full h-full z-10" 
-            />
+            <div ref={modelRef} className="w-full h-full z-10">
+              <Character3D 
+                ref={characterRef} 
+                className="w-full h-full" 
+              />
+            </div>
 
             {/* Giant Centered Typography "HIREFLOW" in Akira Expanded with interactive letter hover inversion */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20" data-purpose="giant-hero-title">
               <h1 
+                ref={lettersRef}
                 className="font-akira font-black text-[2.8rem] sm:text-[4.4rem] md:text-[5.8rem] lg:text-[7.4rem] xl:text-[8.6rem] leading-none select-none whitespace-nowrap transform -translate-y-1"
                 style={{
                   letterSpacing: '0.14em',
+                  perspective: '800px',
                 }}
               >
                 {/* Letters in HIRE: default black, inverts to white on hover */}
@@ -195,11 +267,11 @@ export default function LandingPage() {
         {/* Bottom Interactive Controls Bar */}
         <footer className="w-full pb-4 sm:pb-7 px-4 flex justify-center z-30" data-purpose="bottom-controls-bar">
           <div 
-            className="w-full max-w-5xl bg-transparent px-5 py-3 sm:px-8 sm:py-4 flex flex-col md:flex-row items-center justify-between gap-4" 
+            className="w-full max-w-5xl bg-transparent px-5 py-3 sm:px-8 sm:py-4 flex flex-col md:flex-row items-center justify-center gap-4" 
             data-purpose="bottom-action-container"
           >
             {/* Primary / Secondary CTAs */}
-            <div className="flex flex-wrap items-center justify-center gap-3 w-full md:w-auto">
+            <div ref={ctaRef} className="flex flex-wrap items-center justify-center gap-3 w-full">
               <button
                 type="button"
                 onClick={scrollToDashboard}
@@ -214,7 +286,7 @@ export default function LandingPage() {
                 href="/candidates"
                 className="bg-white/70 hover:bg-white text-neutral-800 hover:text-black text-xs sm:text-sm px-4 py-2.5 transition-all border border-neutral-300/80 hover:border-neutral-500 font-medium shadow-2xs backdrop-blur-xs active:scale-95"
               >
-                Explore Benchmarks
+                Explore Candidates
               </Link>
 
               <button
@@ -227,37 +299,21 @@ export default function LandingPage() {
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
             </div>
-
-            {/* Telemetry & Scroll Prompt */}
-            <div className="flex items-center justify-center gap-4 text-xs font-mono text-neutral-600 border-t border-neutral-300/40 md:border-t-0 pt-3 md:pt-0 w-full md:w-auto">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-neutral-800 font-sans tracking-normal font-semibold">SOC2 TYPE-III</span>
-              </div>
-              <span className="text-neutral-300">|</span>
-              <div className="text-[11px] text-neutral-600">
-                LATENCY: <span className="text-neutral-900 font-bold">14ms</span>
-              </div>
-              <span className="text-neutral-300">|</span>
-              <button
-                type="button"
-                onClick={scrollToDashboard}
-                className="text-[11px] text-neutral-600 hover:text-black font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-              >
-                <span>Scroll down</span>
-                <ArrowDown className="w-3 h-3" />
-              </button>
-            </div>
           </div>
         </footer>
       </section>
 
       {/* ========================================================================= */}
-      {/* SLIDE 2: Executive Platform Dashboard                                    */}
+      {/* SLIDE 2: Executive Platform Dashboard — slides UP over landing            */}
       {/* ========================================================================= */}
       <section 
         id="dashboard" 
-        className="min-h-screen w-full relative shrink-0 bg-[#f3f2f2] border-t border-neutral-300/80 theme-poppins-pages"
+        ref={dashboardRef}
+        className="min-h-screen w-full relative z-[10] bg-[#f3f2f2] theme-poppins-pages wireframe-grid"
+        style={{
+          borderRadius: '24px 24px 0 0',
+          boxShadow: '0 -24px 80px rgba(0,0,0,0.18), 0 -4px 24px rgba(0,0,0,0.10)',
+        }}
       >
         {/* 
           Sticky Navbar for Slide 2:

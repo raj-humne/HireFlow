@@ -219,3 +219,33 @@ html.lenis, html.lenis body {
   transition-property: overflow;
 }
 
+/* Permanently hide Spline 3D watermark badge and external links */
+#spline-watermark,
+.spline-watermark,
+a[href*="spline.design"],
+a[href*="spline"],
+div:has(> a[href*="spline"]) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Permanently hide Next.js dev indicators and bottom-left N issue badge */
+nextjs-portal,
+[data-nextjs-dev-indicator],
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+div[data-nextjs-route-announcer],
+div:has(> [data-nextjs-dev-indicator]) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+

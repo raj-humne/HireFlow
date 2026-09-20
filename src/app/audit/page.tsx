@@ -98,7 +98,6 @@ export default function AuditTrailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-300/80 pb-5">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-mono font-semibold text-neutral-800 mb-2 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-[#FF3B30] inline-block animate-ping" />
             <span className="tracking-wider uppercase">Governance & Compliance (PRD §12, §13, §20)</span>
           </div>
           <h1 className="text-2xl font-display font-bold tracking-tight text-[#0F0F0F] flex items-center gap-2.5">

@@ -53,7 +53,6 @@ export default function CandidatesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-300/80 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF3B30] inline-block animate-ping" />
             <span className="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">
               CANDIDATE INTELLIGENCE PIPELINE
             </span>
