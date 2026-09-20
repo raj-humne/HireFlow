@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { usePageTransition } from '@/components/layout/PageTransition';
+import { usePageTransition, setActiveSlideDirection } from '@/components/layout/PageTransition';
 
 const NEXT_PAGE_MAP: Record<string, string> = {
   '/': '/roles',           // On landing page ('/'), scrolling past dashboard transitions to /roles
@@ -41,43 +41,39 @@ export function ScrollPageTransition() {
     if (!hasNext && !hasPrev) return;
 
     const checkAtBottom = () => {
-      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
       const innerHeight = window.innerHeight;
-      const scrollHeight = document.documentElement.scrollHeight;
-      return scrollHeight - (scrollY + innerHeight) <= 35;
+      const scrollHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      return scrollHeight - (scrollY + innerHeight) <= 40;
     };
 
     const checkAtTop = () => {
-      const scrollY = window.scrollY || window.pageYOffset || 0;
-      return scrollY <= 25;
+      const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      return scrollY <= 35;
     };
 
     const triggerNext = () => {
       const nextPage = NEXT_PAGE_MAP[pathname];
-      if (!nextPage) return;
+      if (!nextPage || isNavigatingRef.current) return;
       isNavigatingRef.current = true;
       accumulatedDeltaRef.current = 0;
-      try {
-        sessionStorage.setItem('slideDirection', 'forward');
-      } catch {}
+      setActiveSlideDirection('forward');
       navigate(nextPage, 'forward');
       setTimeout(() => {
         isNavigatingRef.current = false;
-      }, 1300);
+      }, 1200);
     };
 
     const triggerPrev = () => {
       const prevPage = PREV_PAGE_MAP[pathname];
-      if (!prevPage) return;
+      if (!prevPage || isNavigatingRef.current) return;
       isNavigatingRef.current = true;
       accumulatedDeltaRef.current = 0;
-      try {
-        sessionStorage.setItem('slideDirection', 'backward');
-      } catch {}
+      setActiveSlideDirection('backward');
       navigate(prevPage, 'backward');
       setTimeout(() => {
         isNavigatingRef.current = false;
-      }, 1300);
+      }, 1200);
     };
 
     const handleWheel = (e: WheelEvent) => {
@@ -86,27 +82,30 @@ export function ScrollPageTransition() {
       const atBottom = checkAtBottom();
       const atTop = checkAtTop();
 
-      // Scrolling DOWN at the bottom of the page
+      // Scrolling DOWN at the bottom of the page -> Next page (from Right to Left)
       if (e.deltaY > 0 && atBottom) {
-        accumulatedDeltaRef.current += e.deltaY;
-        if (accumulatedDeltaRef.current >= 50) {
+        accumulatedDeltaRef.current = Math.max(0, accumulatedDeltaRef.current) + e.deltaY;
+        if (accumulatedDeltaRef.current >= 30) {
           triggerNext();
         }
       }
-      // Scrolling UP at the top of the page (disabled on '/' since top is Landing Hero)
+      // Scrolling UP at the top of the page -> Previous page (from Left to Right)
       else if (e.deltaY < 0 && atTop && pathname !== '/') {
-        accumulatedDeltaRef.current += e.deltaY;
-        if (accumulatedDeltaRef.current <= -50) {
+        accumulatedDeltaRef.current = Math.min(0, accumulatedDeltaRef.current) + e.deltaY;
+        if (accumulatedDeltaRef.current <= -30) {
           triggerPrev();
         }
       } else {
-        accumulatedDeltaRef.current = 0;
+        // Reset only if user reverses direction
+        if ((accumulatedDeltaRef.current > 0 && e.deltaY < 0) || (accumulatedDeltaRef.current < 0 && e.deltaY > 0)) {
+          accumulatedDeltaRef.current = 0;
+        }
       }
 
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       resetTimerRef.current = setTimeout(() => {
         accumulatedDeltaRef.current = 0;
-      }, 350);
+      }, 600);
     };
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -125,10 +124,10 @@ export function ScrollPageTransition() {
       const atBottom = checkAtBottom();
       const atTop = checkAtTop();
 
-      if (diffY > 50 && atBottom) {
+      if (diffY > 30 && atBottom) {
         touchStartYRef.current = null;
         triggerNext();
-      } else if (diffY < -50 && atTop && pathname !== '/') {
+      } else if (diffY < -30 && atTop && pathname !== '/') {
         touchStartYRef.current = null;
         triggerPrev();
       }

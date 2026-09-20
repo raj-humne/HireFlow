@@ -3,6 +3,29 @@
 import React, { createContext, useContext, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+let activeSlideDirection: 'forward' | 'backward' = 'forward';
+
+export function getActiveSlideDirection(): 'forward' | 'backward' {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = sessionStorage.getItem('slideDirection') as 'forward' | 'backward' | null;
+      if (stored === 'forward' || stored === 'backward') {
+        return stored;
+      }
+    } catch {}
+  }
+  return activeSlideDirection;
+}
+
+export function setActiveSlideDirection(dir: 'forward' | 'backward') {
+  activeSlideDirection = dir;
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.setItem('slideDirection', dir);
+    } catch {}
+  }
+}
+
 export function getPageRank(path: string): number {
   if (!path || path === '/') return 0;
   if (path.startsWith('/roles/')) return 15;
@@ -42,8 +65,9 @@ export function PageTransitionProvider({ children }: { children: React.ReactNode
       const fromRank = getPageRank(currentPath);
       const toRank   = getPageRank(targetPath);
       const direction = explicitDirection ?? (toRank >= fromRank ? 'forward' : 'backward');
+      
+      setActiveSlideDirection(direction);
       try {
-        sessionStorage.setItem('slideDirection', direction);
         sessionStorage.setItem('lastPathname', currentPath);
       } catch {}
 
@@ -70,14 +94,27 @@ export function PageTransitionProvider({ children }: { children: React.ReactNode
       const fromRank = getPageRank(currentPath);
       const toRank   = getPageRank(targetPath);
       const direction = toRank >= fromRank ? 'forward' : 'backward';
+      
+      setActiveSlideDirection(direction);
       try {
-        sessionStorage.setItem('slideDirection', direction);
         sessionStorage.setItem('lastPathname', currentPath);
       } catch {}
     };
 
+    // Handle browser Back / Forward history events
+    const handlePopState = () => {
+      const currentPath = window.location.pathname;
+      const prevPath = typeof window !== 'undefined' ? sessionStorage.getItem('lastPathname') || '' : '';
+      const dir = prevPath ? (getPageRank(currentPath) >= getPageRank(prevPath) ? 'forward' : 'backward') : 'backward';
+      setActiveSlideDirection(dir);
+    };
+
     document.addEventListener('click', handleClick, { capture: true });
-    return () => document.removeEventListener('click', handleClick, { capture: true });
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      document.removeEventListener('click', handleClick, { capture: true });
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   return (

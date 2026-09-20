@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
-import { getPageRank } from '@/components/layout/PageTransition';
+import { getPageRank, getActiveSlideDirection } from '@/components/layout/PageTransition';
 import gsap from 'gsap';
 
 function PageSlide({ children }: { children: React.ReactNode }) {
@@ -13,43 +13,33 @@ function PageSlide({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ref.current) return;
 
-    let direction: 'forward' | 'backward' = 'forward';
-    let hadStored = false;
+    // Reliably get current slide direction
+    let direction: 'forward' | 'backward' = getActiveSlideDirection();
     try {
       const stored = sessionStorage.getItem('slideDirection') as 'forward' | 'backward' | null;
-      if (stored) {
+      if (stored === 'forward' || stored === 'backward') {
         direction = stored;
-        hadStored = true;
-        sessionStorage.removeItem('slideDirection');
       } else {
-        const prevPath = sessionStorage.getItem('lastPathname') || '/';
-        direction = getPageRank(pathname) >= getPageRank(prevPath) ? 'forward' : 'backward';
+        const prevPath = sessionStorage.getItem('lastPathname');
+        if (prevPath && prevPath !== pathname) {
+          direction = getPageRank(pathname) >= getPageRank(prevPath) ? 'forward' : 'backward';
+        }
       }
       sessionStorage.setItem('lastPathname', pathname);
-    } catch {
-      direction = 'forward';
-    }
-
-    // If first visit to landing page without any navigation intent, don't play card slide
-    if (pathname === '/' && !hadStored) {
-      return;
-    }
+    } catch {}
 
     // Forward: incoming page slides in from RIGHT to LEFT (starts at +100%)
     // Backward: incoming page slides in from LEFT to RIGHT (starts at -100%)
     const startX = direction === 'forward' ? '100%' : '-100%';
 
-    // While sliding:
-    // It looks like a physical card:
-    // - Rounded borders (borderRadius: 24px)
-    // - Directional drop shadow cast in the direction of motion
-    // - Subtle border outline
-    // - Slight scale down (0.985) so edges & shadow are fully visible while floating in
-    // - Solid background so it's an opaque card
+    // Directional drop shadow cast in the direction of motion
     const initialShadow =
       direction === 'forward'
         ? '-25px 20px 60px -10px rgba(0, 0, 0, 0.28), -10px 10px 25px rgba(0, 0, 0, 0.15)'
         : '25px 20px 60px -10px rgba(0, 0, 0, 0.28), 10px 10px 25px rgba(0, 0, 0, 0.15)';
+
+    // Kill any existing tween on ref.current
+    gsap.killTweensOf(ref.current);
 
     gsap.set(ref.current, {
       x: startX,
@@ -59,17 +49,19 @@ function PageSlide({ children }: { children: React.ReactNode }) {
       border: '1px solid rgba(15, 15, 15, 0.12)',
       backgroundColor: '#f3f2f2',
       overflow: 'clip',
-      opacity: 0.92,
+      opacity: 0.95,
     });
 
     const tl = gsap.timeline();
 
     // 1. Decelerate smoothly into place (power3.out)
+    // For backward motion: moves from -100% (left) to 0% (center)
+    // For forward motion: moves from +100% (right) to 0% (center)
     tl.to(ref.current, {
       x: '0%',
       scale: 1,
       opacity: 1,
-      duration: 0.58,
+      duration: 0.55,
       ease: 'power3.out',
     });
 
@@ -80,17 +72,17 @@ function PageSlide({ children }: { children: React.ReactNode }) {
         borderRadius: '0px',
         boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
         border: '1px solid rgba(0, 0, 0, 0)',
-        duration: 0.22,
+        duration: 0.2,
         ease: 'power2.out',
         onComplete: () => {
           if (ref.current) {
             gsap.set(ref.current, {
-              clearProps: 'transform,borderRadius,boxShadow,border,scale,backgroundColor,overflow',
+              clearProps: 'all',
             });
           }
         },
       },
-      '-=0.2'
+      '-=0.18'
     );
 
     return () => {
@@ -102,7 +94,6 @@ function PageSlide({ children }: { children: React.ReactNode }) {
     <div
       ref={ref}
       className="w-full flex-1 flex flex-col wireframe-grid"
-      style={{ willChange: 'transform' }}
     >
       {children}
     </div>
